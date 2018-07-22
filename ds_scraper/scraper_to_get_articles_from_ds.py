@@ -125,7 +125,7 @@ class Article:
         @param {string} text - tex tto be sanitized
         """
         text = text.strip().lower()
-        textWithoutSpecialChar = re.sub("[.?!\"\n',]","",text)
+        textWithoutSpecialChar = re.sub("[.?!\"\n',:]","",text)
         return re.sub("[ ]","_",textWithoutSpecialChar)
             
     def writeToFile(self):
@@ -144,24 +144,7 @@ class Article:
         
         
         
-### HELPER METHODS
-        
-def getContent(date):
-    """ 
-    Makes a GET request and gets html content back. 
-    
-    @param {string} date - Date for which we want the html content
-    @returns 
-    """
-    address = "https://www.thedailystar.net/newspaper?date={}".format(date)
-    
-    #createDirectories(date)
-
-    html = urlopen(address)
-    soup = BeautifulSoup(html, 'html.parser')
-    content = soup.find_all('div',attrs={'class':"panel-pane pane-news-col no-title block"}) 
-
-    return content
+### HELPER METHODS        
 
 def findSectionsAndArticlesFromContent(date, content):
     """ 
@@ -191,26 +174,62 @@ def populateSections(date, articlesInSection):
 
 
 def getContentAndTimeList(numOfDaysToScrape):
-    """Retrieves a list of content from Daily Star according to the number of days to scrape""" 
+    """Retrieves a list of content from Daily Star and a list of dates for which to scrape""" 
     content_list = []
-    time_list = [] 
-           
-    for i in range(1,numOfDaysToScrape): #O(n)
-        time = str(date.today()-timedelta(i))
-        time_list.append(time)
-        content_list.append(getContent(time))
+    
+    time_list = getDatesToScrape()
+       
+    for i in range(len(time_list)): #O(n)
+        content_list.append(getContent(time_list[i]))
+        
     return content_list, time_list
 
+def getDatesToScrape():
+    """ 
+    Returns a list of date in string format, iterating  from start to end date.
+    Start and end dates need to changed manually inside the method.
+    """
 
+    end_date = date(2018, 7, 21)  
+    star_date = date(2018, 7, 21)  
+    dates = [star_date + timedelta(days=x) for x in range((end_date-star_date).days + 1)]
+
+    return [str(d) for d in dates]
+
+def getContent(date):
+    """ 
+    Makes a GET request and gets html content back. 
+    
+    @param {string} date - Date for which we want the html content
+    @returns 
+    """
+    address = "https://www.thedailystar.net/newspaper?date={}".format(date)
+    
+    html = urlopen(address)
+    soup = BeautifulSoup(html, 'html.parser')
+    content = soup.find_all('div',attrs={'class':"panel-pane pane-news-col no-title block"}) 
+
+    return content
+def keepTrackOfScrapedArticles(date):
+    """
+    Writes the date to file a file. The date represents successfull scraping for that date
+    """
+    
+    with open("successful_scraped_dates.txt", "a+") as file:
+        file.write(f"{date}\n")
+            
 ### MAIN        
 def main():        
     content_list, time_list = getContentAndTimeList(numOfDaysToScrape)
         
     for i in range(len(content_list)):
         start = pytime.time()
+        
         articlesInSection = findSectionsAndArticlesFromContent(time_list[i],content_list[i])     
         sections = populateSections(time_list[i], articlesInSection)
         [section.writeArticlesToFile() for section in sections]
+        keepTrackOfScrapedArticles(time_list[i])
+        
         end = pytime.time()
         delta = end - start
         print(f"It took {delta} seconds to write to file.")
