@@ -1,67 +1,161 @@
 import os
 import time as pytime
+import re
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from datetime import date, timedelta
 
 base = "https://www.thedailystar.net/"
-numOfDaysToScrape = 2
+numOfDaysToScrape = 8
+
 
 class Section:
-    def __init__(self, section_title,articles_raw):
+    """ 
+    Represents a section for Daily Star i.e. Front Page, Sports etc
+    """
+    def __init__(self, section_title,articles_raw,date):
+        """ 
+        Constructor
+        
+        @param {string} section_title - Title of the section
+        @param {[BeautifulSoup obj]} articles_raw - A list of BeautifulSoup obj. Each obj contains all the articles for a section
+        @param {string} date - Date of the articles
+        """
         self.section_title = section_title
         self.articles_raw = articles_raw
-        self.articles = []
+        self.date = date
         
-    def createArticles(self):
+    def writeArticlesToFile(self):
+        """ 
+        Extracts and transforms each article from BeautifulSoup to an Article obj, then writes the article text to file
+        """
+        counter = 0
         for article in self.articles_raw:
             try:
                 article_title = article.h5.text
                 article_url = base + article.a['href']
                 article_html = urlopen(article_url)
                 article_soup = BeautifulSoup(article_html, 'html.parser')
-                self.articles.append(Article(self.section_title, article_title,article_soup))
-                
-            except:
+                articleObj = Article(self.section_title, article_title,article_soup, self.date)
+                articleObj.writeToFile()
+                counter += 1
+            except Exception as e:             
+                print(f"Error writing {article_title}")
+                print(f"Error message: {e}")
                 continue
-        pytime.sleep(300)
-        print(f"Created {len(self.articles)} articles")
-        return self.articles
+        
+        waitTime = 70
+        
+        print(f"Wrote {counter} articles to file")
+        print(f"Waiting {waitTime} seconds before making new requests...")
+        pytime.sleep(waitTime)
+        
             
 
 class Article:
-    def __init__(self,section_title,article_title,article_content):
+    """
+    Represents a Daily Star article
+    """
+    def __init__(self,section_title,article_title,article_content, date):
+        """ 
+        Constructor
+        
+         @param {string} section_title - Title of the section
+         @param {string} article_title - Title of the article
+         @param {BeautifulSoup obj} article_content - A BeautifulSoup obj that encapsulates the contents of the article
+         @param {string} date - Date of the articles
+        """
         self.section_title = section_title
         self.article_title = article_title
         self.article_content = article_content
+        self.date = date
     
     def getSectionTitle(self):
+        """ 
+        Returns the section_title
+        """
         return self.section_title
     
     def getArticleTitle(self):
+        """ 
+        Returns the aritlce_title
+        """
         return self.article_title
     
     def getArticleContent(self):
+        """ 
+        Returns the article_content
+        """
         return self.article_content
     
     def extractText(self):
+        """
+        Extracts the articles from article_content and transforms it from BeautifulSoup obj to string
+        
+        @returns Article text in string format
+        """
         paras = self.article_content.find('div',attrs={'class':["field-body view-mode-full","field-body"]}).find_all('p')
         text = self._extractParasAndFormText(paras)
         return text
     
     def _extractParasAndFormText(self,paras):
+        """
+        Extracts the string text from BeautifulSoup paragraphs
+        
+        @param {BeautifulSoup obj} paras - Contains article text
+        @returns Article text in string format
+        """
         
         text = "\n ".join([str(para.text) for para in paras])
         return text
+    
+    def _createDirectories(self,dirPath):
+        """ 
+        Creates directories if they do not exist
         
-def createDirectories(date):
-    if not os.path.isdir(date):
-        os.makedirs(date)
+        @param {string} dirPath - Directory path
+        """
+        if not os.path.isdir(dirPath):
+            os.makedirs(dirPath)
+            
+    def _sanitizeText(self,text):
+        """
+        Removes undesireable characters from the text so that they are valid file name.
         
-def getContent(date):  
+        @param {string} text - tex tto be sanitized
+        """
+        text = text.strip().lower()
+        textWithoutSpecialChar = re.sub("[.?!\"\n',]","",text)
+        return re.sub("[ ]","_",textWithoutSpecialChar)
+            
+    def writeToFile(self):
+        """ 
+        Write the article to a txt file.
+        """
+        dirPath  = self._sanitizeText(f"{self.date}/{self.section_title}")
+        self._createDirectories(dirPath)
+    
+        fileName = self._sanitizeText(f'{self.date}/{self.section_title}/{self.article_title}') + ".txt"
+    
+        with open(fileName,"w+", encoding="utf-8") as fobj:
+            #print(f"{self.section_title}: {self.article_title}")
+            fobj.write(self.extractText())
+        
+        
+        
+        
+### HELPER METHODS
+        
+def getContent(date):
+    """ 
+    Makes a GET request and gets html content back. 
+    
+    @param {string} date - Date for which we want the html content
+    @returns 
+    """
     address = "https://www.thedailystar.net/newspaper?date={}".format(date)
     
-    createDirectories(date)
+    #createDirectories(date)
 
     html = urlopen(address)
     soup = BeautifulSoup(html, 'html.parser')
@@ -70,6 +164,13 @@ def getContent(date):
     return content
 
 def findSectionsAndArticlesFromContent(date, content):
+    """ 
+    Finds and extracts all the news sections from the html content
+    
+    @param {string} date - String representation of the date for the sections
+    @param {BeautifulSoup obj} - BeautifulSoup obj that contains all the html content
+    @returns A dictionary mapping sections to their articles
+    """
     articlesInSection = {}
     
     for section in content:
@@ -80,45 +181,42 @@ def findSectionsAndArticlesFromContent(date, content):
     return articlesInSection
 
 def populateSections(date, articlesInSection):
+    """Returns a list of Section objects """
     sections = []
     for section_title, articles in list(articlesInSection.items()):
-        sectionObj = Section(section_title,articles)
+        sectionObj = Section(section_title,articles, date)
         sections.append(sectionObj)
     
     return sections
 
-def getArticleText(date, articleList):
-    for article in articleList:
-        text = ""
-        section_title = article.getSectionTitle()
-        article_title = article.getArticleTitle()
-        text = article.extractText()
-        
-        print(f"{section_title}: {article_title}")
-        
-        writeArticlesToFile(date,section_title,article_title, text)
-        
-def writeArticlesToFile(date,section_title,article_title, article_text):
-    if not os.path.isdir("{}/{}".format(date,section_title)):
 
-        os.makedirs("{}/{}".format(date,section_title))
+def getContentAndTimeList(numOfDaysToScrape):
+    """Retrieves a list of content from Daily Star according to the number of days to scrape""" 
+    content_list = []
+    time_list = [] 
+           
+    for i in range(1,numOfDaysToScrape): #O(n)
+        time = str(date.today()-timedelta(i))
+        time_list.append(time)
+        content_list.append(getContent(time))
+    return content_list, time_list
+
+
+### MAIN        
+def main():        
+    content_list, time_list = getContentAndTimeList(numOfDaysToScrape)
+        
+    for i in range(len(content_list)):
+        start = pytime.time()
+        articlesInSection = findSectionsAndArticlesFromContent(time_list[i],content_list[i])     
+        sections = populateSections(time_list[i], articlesInSection)
+        [section.writeArticlesToFile() for section in sections]
+        end = pytime.time()
+        delta = end - start
+        print(f"It took {delta} seconds to write to file.")
+        
+if __name__ == "__main__":
+    main()
     
-    with open(f'{date}/{section_title}/{article_title}.txt'.replace('?',""),"w") as fobj:
-        fobj.write(article_text)
-
-
-        
-content_list = []
-time_list = []            
-for i in range(1,numOfDaysToScrape): #O(n)
-    time = str(date.today()-timedelta(i))
-    time_list.append(time)
-    content_list.append(getContent(time))
-    
-for i in range(len(content_list)): #O(3n^2)   
-    articlesInSection = findSectionsAndArticlesFromContent(time_list[i],content_list[i])     
-    sections = populateSections(time_list[i], articlesInSection)
-    articleList = [section.createArticles() for section in sections]
-    getArticleText(time_list[i], articleList)
     
 
