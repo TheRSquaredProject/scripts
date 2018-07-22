@@ -201,16 +201,39 @@ def getContentAndTimeList(numOfDaysToScrape):
         content_list.append(getContent(time))
     return content_list, time_list
 
+def getDatesToScrape():
+    """ 
+    Returns a list of date in string format, iterating  from start to end date.
+    Start and end dates need to changed manually inside the method.
+    """
 
+    endDate = date(2018, 7, 22)  # start date
+    startDate = date(2018, 7, 10)  # end da
+
+    dates = [startDate + timedelta(days=x) for x in range((endDate-startDate).days + 1)]
+
+    return [str(d) for d in dates]
+
+def keepTrackOfScrapedArticles(date):
+    """
+    Writes the date to file a file. The date represents successfull scraping for that date
+    """
+    
+    with open("successful_scraped_dates.txt", "a+") as file:
+        file.write(date)
+            
 ### MAIN        
 def main():        
     content_list, time_list = getContentAndTimeList(numOfDaysToScrape)
         
     for i in range(len(content_list)):
         start = pytime.time()
+        
         articlesInSection = findSectionsAndArticlesFromContent(time_list[i],content_list[i])     
         sections = populateSections(time_list[i], articlesInSection)
         [section.writeArticlesToFile() for section in sections]
+        keepTrackOfScrapedArticles(time_list[i])
+        
         end = pytime.time()
         delta = end - start
         print(f"It took {delta} seconds to write to file.")
