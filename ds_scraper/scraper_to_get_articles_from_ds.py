@@ -144,24 +144,7 @@ class Article:
         
         
         
-### HELPER METHODS
-        
-def getContent(date):
-    """ 
-    Makes a GET request and gets html content back. 
-    
-    @param {string} date - Date for which we want the html content
-    @returns 
-    """
-    address = "https://www.thedailystar.net/newspaper?date={}".format(date)
-    
-    #createDirectories(date)
-
-    html = urlopen(address)
-    soup = BeautifulSoup(html, 'html.parser')
-    content = soup.find_all('div',attrs={'class':"panel-pane pane-news-col no-title block"}) 
-
-    return content
+### HELPER METHODS        
 
 def findSectionsAndArticlesFromContent(date, content):
     """ 
@@ -191,7 +174,7 @@ def populateSections(date, articlesInSection):
 
 
 def getContentAndTimeList(numOfDaysToScrape):
-    """Retrieves a list of content from Daily Star according to the number of days to scrape""" 
+    """Retrieves a list of content from Daily Star and a list of dates for which to scrape""" 
     content_list = []
     
     time_list = getDatesToScrape()
@@ -213,6 +196,22 @@ def getDatesToScrape():
 
     return [str(d) for d in dates]
 
+def getContent(date):
+    """ 
+    Makes a GET request and gets html content back. 
+    
+    @param {string} date - Date for which we want the html content
+    @returns 
+    """
+    address = "https://www.thedailystar.net/newspaper?date={}".format(date)
+    
+    #createDirectories(date)
+
+    html = urlopen(address)
+    soup = BeautifulSoup(html, 'html.parser')
+    content = soup.find_all('div',attrs={'class':"panel-pane pane-news-col no-title block"}) 
+
+    return content
 def keepTrackOfScrapedArticles(date):
     """
     Writes the date to file a file. The date represents successfull scraping for that date
