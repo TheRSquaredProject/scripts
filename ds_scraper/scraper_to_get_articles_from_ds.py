@@ -125,7 +125,7 @@ class Article:
         @param {string} text - tex tto be sanitized
         """
         text = text.strip().lower()
-        textWithoutSpecialChar = re.sub("[.?!\"\n',]","",text)
+        textWithoutSpecialChar = re.sub("[.?!\"\n',:]","",text)
         return re.sub("[ ]","_",textWithoutSpecialChar)
             
     def writeToFile(self):
@@ -193,12 +193,12 @@ def populateSections(date, articlesInSection):
 def getContentAndTimeList(numOfDaysToScrape):
     """Retrieves a list of content from Daily Star according to the number of days to scrape""" 
     content_list = []
-    time_list = [] 
-           
-    for i in range(1,numOfDaysToScrape): #O(n)
-        time = str(date.today()-timedelta(i))
-        time_list.append(time)
-        content_list.append(getContent(time))
+    
+    time_list = getDatesToScrape()
+       
+    for i in range(len(time_list)): #O(n)
+        content_list.append(getContent(time_list[i]))
+        
     return content_list, time_list
 
 def getDatesToScrape():
@@ -207,10 +207,9 @@ def getDatesToScrape():
     Start and end dates need to changed manually inside the method.
     """
 
-    endDate = date(2018, 7, 22)  # start date
-    startDate = date(2018, 7, 10)  # end da
-
-    dates = [startDate + timedelta(days=x) for x in range((endDate-startDate).days + 1)]
+    end_date = date(2018, 7, 21)  
+    star_date = date(2018, 7, 21)  
+    dates = [star_date + timedelta(days=x) for x in range((end_date-star_date).days + 1)]
 
     return [str(d) for d in dates]
 
