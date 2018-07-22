@@ -205,8 +205,6 @@ def getContent(date):
     """
     address = "https://www.thedailystar.net/newspaper?date={}".format(date)
     
-    #createDirectories(date)
-
     html = urlopen(address)
     soup = BeautifulSoup(html, 'html.parser')
     content = soup.find_all('div',attrs={'class':"panel-pane pane-news-col no-title block"}) 
@@ -218,7 +216,7 @@ def keepTrackOfScrapedArticles(date):
     """
     
     with open("successful_scraped_dates.txt", "a+") as file:
-        file.write(date)
+        file.write(f"{date}\n")
             
 ### MAIN        
 def main():        
