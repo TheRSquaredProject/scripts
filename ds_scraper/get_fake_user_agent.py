@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Jul 22 02:06:42 2018
-
-@author: aminm
-"""
 
 import random
 
@@ -33,5 +28,3 @@ def getRandomUserAgent(user_agent_list=user_agent_list):
 
     return user_agent
     
-print("User-Agent Sent:%s\n"%(getRandomUserAgent()))
-print("-------------------\n\n")

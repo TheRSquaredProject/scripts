@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Jul 22 22:51:13 2018
 
-@author: aminm
-"""
 from bs4 import BeautifulSoup
-import requests
-import time as pytime
 from Article import Article
-from get_fake_user_proxies import getProxy
+import scraper
 
 class Section:
     """ 
@@ -30,38 +24,45 @@ class Section:
         """ 
         Extracts and transforms each article from BeautifulSoup to an Article obj, then writes the article text to file
         """
-        counter = 0
-        waitTime = 250
+        success = 0
+        errors = 0
         
         base = "https://www.thedailystar.net/"
-        #spoofedIp = getProxy()['ip']
-        spoofedProxy = getProxy()
-        spoofedProxyWithPort = spoofedProxy['ip']+ ":" +spoofedProxy['port'] #need to refactor
-        proxy = {"http": f"http://{str(spoofedProxyWithPort)}"}
+
         for article in self.articles_raw:
             try:
                 article_title = article.h5.text
                 article_url = base + article.a['href']
-                response = requests.get(article_url, proxies=proxy)
-                
+                response = scraper.makeSpoofedRequest(article_url)
                 article_soup = BeautifulSoup(response.text, 'html.parser')
                 articleObj = Article(self.section_title, article_title,article_soup, self.date)
                 articleObj.writeToFile()
-                counter += 1
+                success += 1
             except Exception as e:             
                 print(f"Error writing {article_title}")
-                print(f"Error message: {e}")
-                spoofedProxy = getProxy()
-                spoofedProxyWithPort = spoofedProxy['ip']+ ":" +spoofedProxy['port'] #need to refactor
-                proxy = {"http:": f"http://{str(spoofedProxyWithPort)}"}
-                #print(f"Waiting {waitTime} seconds before making new requests...")
-                #pytime.sleep(waitTime)
+                errors += 1
+                
                 continue
         
+        print(f"Wrote {success} articles to file in {self.section_title}")
+        print(f"Could not write {errors} articles.")
+        
+        self._log(success, errors)
+    
+    def _log(self, successful, errors):
+        logText = self._prepareLog(successful, errors)
+        
+        self._saveLog(logText)
+    
+    def _prepareLog(self, successful, errors):
+        log = "-" * 20
+        log += f"Log for {self.date} -- {self.section_title}\n"
+        log += f"Sucessfully: {successful} artcles\n"
+        log += f"Error: {errors} articles.\n "
+        
+        return log
+    
+    def _saveLog(self, log):
+        with open("general_log.txt", "a") as file:
+            file.write(log)
        
-        
-        print(f"Wrote {counter} articles to file")
-       
-        
-        
-            

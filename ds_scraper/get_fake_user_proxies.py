@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Jul 22 02:05:59 2018
-
-@author: aminm
-"""
 
 from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
@@ -33,6 +28,9 @@ def getProxy():
     # Choose a random proxy
     proxy_index = random_proxy()
     proxy = proxies[proxy_index]
+    
+    spoofedProxyWithPort = proxy['ip']+ ":" + proxy['port'] #need to refactor
+    proxy = {"http": f"http://{str(spoofedProxyWithPort)}"}
     
     return proxy
 

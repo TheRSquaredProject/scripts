@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Jul 22 22:52:41 2018
 
-@author: aminm
-"""
 import os
 import re
 
