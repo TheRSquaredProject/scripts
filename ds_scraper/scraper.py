@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from Section import Section
 from get_fake_user_proxies import getProxy       
+from get_fake_user_agent import getRandomUserAgent
 
 def findSectionsAndArticlesFromContent(content):
     """ 
@@ -48,9 +49,7 @@ def getDatesToScrape(start_date, end_date):
     Returns a list of date in string format, iterating  from start to end date.
     Start and end dates need to changed manually inside the method.
     """
-
-    #end_date = date(2018, 6, 5)  
-    #star_date = date(2018, 6, 1)  
+  
     dates = [start_date + timedelta(days=x) for x in range((end_date-start_date).days + 1)]
 
     return [str(d) for d in dates]
@@ -75,9 +74,9 @@ def makeSpoofedRequest(address):
     """ 
     Makes a GET request using a proxy
     """
-    
+    header = getRandomUserAgent()
     proxy = getProxy()
-    response = requests.get(address, proxies=proxy)
+    response = requests.get(address, headers=header ,proxies=proxy)
     
     return response        
 

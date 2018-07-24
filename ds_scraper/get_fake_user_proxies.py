@@ -5,9 +5,8 @@ from bs4 import BeautifulSoup
 import random
 from get_fake_user_agent import getRandomUserAgent
 
-ua = getRandomUserAgent()
-#ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396 Safari/537.36'
-proxies = [] # Will contain proxies [ip, port]
+ua = getRandomUserAgent()['user-agent']
+proxies = [] 
 
 
 def getProxy():
@@ -29,7 +28,7 @@ def getProxy():
     proxy_index = random_proxy()
     proxy = proxies[proxy_index]
     
-    spoofedProxyWithPort = proxy['ip']+ ":" + proxy['port'] #need to refactor
+    spoofedProxyWithPort = proxy['ip']+ ":" + proxy['port'] 
     proxy = {"http": f"http://{str(spoofedProxyWithPort)}"}
     
     return proxy

@@ -26,5 +26,5 @@ user_agent_list = [
 def getRandomUserAgent(user_agent_list=user_agent_list):
     user_agent = random.choice(user_agent_list)
 
-    return user_agent
+    return {'user-agent': user_agent }
     
